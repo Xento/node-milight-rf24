@@ -11,8 +11,10 @@ var SerialPort = require("serialport").SerialPort
  * @constructor
  */
 var MilightRF24Controller = function (options) {
-    var self = this;
+    	var self = this;
 	options = options || {};
+	
+	events.EventEmitter.call(this);
 	
 	this._counter = 0;
 	this._lastSend = 0;
@@ -43,97 +45,74 @@ var MilightRF24Controller = function (options) {
 	this._emitter.on("dataReceived", function (data){
 		data = String(data).split(" ");
 		console.log("data:"+data);
-		var cmd = "ID:"+data[1]+data[2]+";";
+		var id = ""+data[1]+data[2];
 		var group = parseInt(data[4],16).toString(10) & 0x07;
-		
-		if(group) 
-		  cmd += "Group:"+group+";";
-		else
-		  cmd += "All;";
-		
 		var button = parseInt(data[5], 16).toString(10) & 0x0F;
 		var brightnes = null;
 		var color = null;
 		var disco = null;
 		
-		if(button == 0x0F) {
-		  console.log("Color:"+data[3]);
-		  color = data[3];
-		}
+		if(button == 0x0F)
+		  	color = data[3];
 		else if(button == 0x0E) {
-		  brightnes = (parseInt(data[4], 16).toString(10) & 0xF8) >> 3;
-		  
-		  if(brightnes <= 18) {
-			brightnes -= 16;
-			brightnes = brightnes * -1;
-		  }
-		  else{
-			brightnes -= 47;
-			brightnes = brightnes * -1;
-		  }
-		  
-		  if(brightnes < 0)
-			brightnes = 0;
-		  else if(brightnes > 25)
-			brightnes = 25;
-		
-		  if(brightnes <= 16) {
-			brightnes = brightnes * -1;
-			brightnes += 16;
-		}
-		else {
-			brightnes = brightnes * -1;
-			brightnes += 47;
-		}
-		
-		brightnes = brightnes << 3;
-		
-		brightnes = numHex(brightnes);
-		console.log(brightnes);
-		  
-		  console.log("Brightnes"+ brightnes);
+			brightnes = (parseInt(data[4], 16).toString(10) & 0xF8) >> 3;
+			  
+			if(brightnes <= 18) {
+				brightnes -= 16;
+				brightnes = brightnes * -1;
+			}
+			else{
+				brightnes -= 47;
+				brightnes = brightnes * -1;
+			}
+			  
+			if(brightnes < 0)
+				brightnes = 0;
+			else if(brightnes > 25)
+				brightnes = 25;
+			
+			if(brightnes <= 16) {
+				brightnes = brightnes * -1;
+				brightnes += 16;
+			}
+			else {
+				brightnes = brightnes * -1;
+				brightnes += 47;
+			}
+			
+			brightnes = brightnes << 3;
+			
+			brightnes = numHex(brightnes);
 		}
 		else if(button == 0x0D) {
-		  disco = parseInt(data[0],16).toString(10) & 0x0F;
-		  console.log("Disco "+disco);
+		  	disco = parseInt(data[0],16).toString(10) & 0x0F;
 		}
-		else if(button == 0x0C) 
-		  console.log("Speed -;");
-		else if(button == 0x0B) 
-		  console.log("Speed +;");
-		else if(button == 0x0A) 
-		  console.log("Group 4 off;");
-		else if(button == 0x09) 
-		  console.log("Group 4 on;");
-		else if(button == 0x08) 
-		  console.log("Group 3 off;");
-		else if(button == 0x07) 
-		  console.log("Group 3 on;");
-		else if(button == 0x06) 
-		  console.log("Group 2 off;");
-		else if(button == 0x05) 
-		  console.log("Group 2 on;");
-		else if(button == 0x04)
-		  console.log("Group 1 off;");
-		else if(button == 0x03)
-		  console.log("Group 1 on;");
-		else if(button == 0x02)
-		  console.log("All off;");
-		else if(button == 0x01)
-		  console.log("All on;");
-		else if(button == 0x00) 
-		  console.log("Slider released;");
-		  
-		if(parseInt(data[5],16).toString(10) & 0x10)
-		  console.log("Long press;");
+		
+		var longPress = false;
+		if(parseInt(data[5],16).toString(10) & 0x10) {
+			longPress = true;
+		}
 		else
-		  console.log("Short press;");
 		
 		console.log(cmd);
+		
+		var dataObj = {
+			raw: data,
+			id: id,
+			zone: group,
+			button: button,
+			longPress: longPress,
+			discoMode: disco,
+			brightnes: brightnes,
+			color: color
+		};
+		
+		this.emit("dataReceived", dataObj);
 	});
 
 };
 
+MilightRF24Controller.prototype.__proto__ = events.EventEmitter.prototype;
 
 MilightRF24Controller.prototype.open = function () {
 	var self = this;
@@ -287,6 +266,9 @@ RGBWButtons.prototype.Group4On = 0x09;
 RGBWButtons.prototype.Group4Off = 0x0A;
 RGBWButtons.prototype.SpeedUp = 0x0B;
 RGBWButtons.prototype.SpeedDown = 0x0C;
+RGBWButtons.prototype.ColorFader = 0x0F;
+RGBWButtons.prototype.BrightnesFader = 0x0E;
+RGBWButtons.prototype.FaderReleased = 0x00;
 
 module.exports = {
 	MilightRF24Controller: MilightRF24Controller,
