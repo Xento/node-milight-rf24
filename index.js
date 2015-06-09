@@ -48,41 +48,41 @@ var MilightRF24Controller = function (options) {
 		var id = ""+data[1]+data[2];
 		var group = parseInt(data[4],16).toString(10) & 0x07;
 		var button = parseInt(data[5], 16).toString(10) & 0x0F;
-		var brightnes = null;
+		var brightness = null;
 		var color = null;
 		var disco = null;
 		
 		if(button == 0x0F)
 		  	color = data[3];
 		else if(button == 0x0E) {
-			brightnes = (parseInt(data[4], 16).toString(10) & 0xF8) >> 3;
+			brightness = (parseInt(data[4], 16).toString(10) & 0xF8) >> 3;
 			  
-			if(brightnes <= 18) {
-				brightnes -= 16;
-				brightnes = brightnes * -1;
+			if(brightness <= 18) {
+				brightness -= 16;
+				brightness = brightness * -1;
 			}
 			else{
-				brightnes -= 47;
-				brightnes = brightnes * -1;
+				brightness -= 47;
+				brightness = brightness * -1;
 			}
 			  
-			if(brightnes < 0)
-				brightnes = 0;
-			else if(brightnes > 25)
-				brightnes = 25;
+			if(brightness < 0)
+				brightness = 0;
+			else if(brightness > 25)
+				brightness = 25;
 			
-			if(brightnes <= 16) {
-				brightnes = brightnes * -1;
-				brightnes += 16;
+			if(brightness <= 16) {
+				brightness = brightness * -1;
+				brightness += 16;
 			}
 			else {
-				brightnes = brightnes * -1;
-				brightnes += 47;
+				brightness = brightness * -1;
+				brightness += 47;
 			}
 			
-			brightnes = brightnes << 3;
+			brightness = brightness << 3;
 			
-			brightnes = numHex(brightnes);
+			brightness = numHex(brightness);
 		}
 		else if(button == 0x0D) {
 		  	disco = parseInt(data[0],16).toString(10) & 0x0F;
@@ -103,7 +103,7 @@ var MilightRF24Controller = function (options) {
 			button: button,
 			longPress: longPress,
 			discoMode: disco,
-			brightnes: brightnes,
+			brightness: brightness,
 			color: color
 		};
 		
@@ -139,24 +139,24 @@ MilightRF24Controller.prototype.setColor = function (id,zone,r,g,b){
 	self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "00", 30);
 }
 
-MilightRF24Controller.prototype.setBrightnes =  function (id, zone, percent) {
+MilightRF24Controller.prototype.setbrightness =  function (id, zone, percent) {
 	var self = this;
 	
-	var brightnes = Math.max( 0,(Math.ceil(percent/100*25)) - 1);
+	var brightness = Math.max( 0,(Math.ceil(percent/100*25)) - 1);
 	
-	if(brightnes <= 16) {
-        brightnes = brightnes * -1;
-		brightnes += 16;
+	if(brightness <= 16) {
+        brightness = brightness * -1;
+		brightness += 16;
 	}
 	else {
-        brightnes = brightnes * -1;
-		brightnes += 47;
+        brightness = brightness * -1;
+		brightness += 47;
 	}
 	
-	brightnes = brightnes << 3;
+	brightness = brightness << 3;
 
-	self._queueData(id, zone, 0, "00", brightnes, "0E", 2);
-	self._queueData(id, zone, 0, "00", brightnes, "00", 30);
+	self._queueData(id, zone, 0, "00", brightness, "0E", 2);
+	self._queueData(id, zone, 0, "00", brightness, "00", 30);
 }
 
 MilightRF24Controller.prototype.sendButton =  function (id, zone, button) {
@@ -175,7 +175,7 @@ MilightRF24Controller.prototype.sendDiscomode = function (id, zone, discomode) {
 }
 
 
-MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, brightnes, button, repeats) {
+MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, brightness, button, repeats) {
 	var self = this;
 	
 	if(self._counter > 255)
@@ -186,13 +186,13 @@ MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, br
 	
 	self._counter++;
 	
-	brightnes = self._numHex(brightnes | zone);
+	brightness = self._numHex(brightness | zone);
 	
 	var strRepeats = "";
 	for(var i = 0; i < repeats; i++)
 		strRepeats += ".";
 	
-	var packet = "B"+disco+id+color+self._numHex(brightnes)+self._numHex(button)+self._numHex(self._counter)+strRepeats;
+	var packet = "B"+disco+id+color+self._numHex(brightness)+self._numHex(button)+self._numHex(self._counter)+strRepeats;
 	
 	self._packets.push(packet);
 	
@@ -267,7 +267,7 @@ RGBWButtons.prototype.Group4Off = 0x0A;
 RGBWButtons.prototype.SpeedUp = 0x0B;
 RGBWButtons.prototype.SpeedDown = 0x0C;
 RGBWButtons.prototype.ColorFader = 0x0F;
-RGBWButtons.prototype.BrightnesFader = 0x0E;
+RGBWButtons.prototype.brightnessFader = 0x0E;
 RGBWButtons.prototype.FaderReleased = 0x00;
 
 module.exports = {
