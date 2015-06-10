@@ -336,14 +336,14 @@ MilightRF24Controller.prototype._hsvToRgb = function(h, s, v) {
     }
 
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
+};
 
 MilightRF24Controller.prototype._MilightColorToRGB  = function(milicolor) {
 	var c1 = (Math.floor((milicolor / 255.0 * 359.0) % 360) - 240);
 	var color = c1 <= 0 ? Math.abs(c1) : 360 - c1;
 	rgb = hsvToRgb(color, 80, 100).join();
 	return rgb;
-});
+};
 
 var RGBWButtons = function(){};
 RGBWButtons.prototype.AllOn = 0x01;
