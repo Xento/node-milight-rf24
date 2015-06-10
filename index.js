@@ -267,7 +267,7 @@ MilightRF24Controller.prototype._hsvToMilightColor = function (hsv){
  * Ported from the excellent java algorithm by Eugene Vishnevsky at:
  * http://www.cs.rit.edu/~ncs/color/t_convert.html
  */
-MilightRF24Controller.prototype._hsvToRgb(h, s, v) {
+MilightRF24Controller.prototype._hsvToRgb = function(h, s, v) {
     var r, g, b;
     var i;
     var f, p, q, t;
@@ -338,7 +338,7 @@ MilightRF24Controller.prototype._hsvToRgb(h, s, v) {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-MilightRF24Controller.prototype._MilightColorToRGB(milicolor) {
+MilightRF24Controller.prototype._MilightColorToRGB  = function(milicolor) {
 	var c1 = (Math.floor((milicolor / 255.0 * 359.0) % 360) - 240);
 	var color = c1 <= 0 ? Math.abs(c1) : 360 - c1;
 	rgb = hsvToRgb(color, 80, 100).join();
