@@ -161,8 +161,11 @@ MilightRF24Controller.prototype.setbrightness =  function (id, zone, percent) {
 	self._queueData(id, zone, 0, "00", brightness, "00", 30);
 }
 
-MilightRF24Controller.prototype.sendButton =  function (id, zone, button) {
+MilightRF24Controller.prototype.sendButton =  function (id, zone, button, longPress) {
 	var self = this;
+	
+	if(longPress == true)
+		button = button | 0x10;
 	
 	self._queueData(id, zone, 0, "00", "00", button, 30);
 }
@@ -250,7 +253,7 @@ MilightRF24Controller.prototype._rbgToHsv = function (r, g, b) {
 
 MilightRF24Controller.prototype._hsvToMilightColor = function (hsv){
     // On the HSV color circle (0..360) with red at 0 degree. We need to convert to the Milight color circle
-    // which has 256 values with red at position 176
+    // which has 256 values with red at position 26
     var color = (256 + 26 - Math.floor(Number(hsv[0]) / 360.0 * 255.0)) % 256;
     return color;
 };
