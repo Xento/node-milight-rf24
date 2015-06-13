@@ -11,7 +11,7 @@ var SerialPort = require("serialport").SerialPort
  * @constructor
  */
 var MilightRF24Controller = function (options) {
-    	var self = this;
+    var self = this;
 	options = options || {};
 	
 	events.EventEmitter.call(this);
@@ -30,7 +30,7 @@ var MilightRF24Controller = function (options) {
 	this._emitter.on("sendData", function () {
 		if(self._packets.length > 0){
 			var packet = self._packets.shift();
-			console.log(packet);
+			//console.log(packet);
 			self._serialPort.write(packet+"\r\n", function(err, results){
 				
 				setTimeout(function(){
@@ -39,14 +39,12 @@ var MilightRF24Controller = function (options) {
 			});
 		}
 		else
-			_sending = false;
+			self._sending = false;
 	});
 
 	this._emitter.on("dataReceived", function (data){
-		var self = this;
 		
 		data = String(data).split(" ");
-		console.log("data:"+data);
 		var id = ""+data[1]+data[2];
 		var group = parseInt(data[4],16).toString(10) & 0x07;
 		var button = parseInt(data[5], 16).toString(10) & 0x0F;
@@ -54,39 +52,12 @@ var MilightRF24Controller = function (options) {
 		var color = null;
 		var disco = null;
 		
-		if(button == 0x0F)
-		  	color = data[3];
-		else if(button == 0x0E) {
-			brightness = (parseInt(data[4], 16).toString(10) & 0xF8) >> 3;
-			  
-			if(brightness <= 18) {
-				brightness -= 16;
-				brightness = brightness * -1;
-			}
-			else{
-				brightness -= 47;
-				brightness = brightness * -1;
-			}
-			  
-			if(brightness < 0)
-				brightness = 0;
-			else if(brightness > 25)
-				brightness = 25;
-			
-			if(brightness <= 16) {
-				brightness = brightness * -1;
-				brightness += 16;
-			}
-			else {
-				brightness = brightness * -1;
-				brightness += 47;
-			}
-			
-			brightness = brightness << 3;
-			
-			brightness = numHex(brightness);
-		}
-		else if(button == 0x0D) {
+		color = self._MilightColorToRGB(parseInt(data[3],16).toString(10));
+		
+		brightness = (parseInt(data[4], 16).toString(10) & 0xF8);	  
+		brightness = self._MilightBrightnessToPercent(brightness);
+		
+		if(button == 0x0D) {
 		  	disco = parseInt(data[0],16).toString(10) & 0x0F;
 		}
 		
@@ -94,9 +65,9 @@ var MilightRF24Controller = function (options) {
 		if(parseInt(data[5],16).toString(10) & 0x10) {
 			longPress = true;
 		}
-		else
 		
-		color = self._MilightColorToRGB(color);
+		data[0] =  data[0].replace("\n", "");
+		data.pop();
 		
 		var dataObj = {
 			raw: data,
@@ -106,10 +77,14 @@ var MilightRF24Controller = function (options) {
 			longPress: longPress,
 			discoMode: disco,
 			brightness: brightness,
-			color: color
+			color: {
+				r: color.r,
+				g: color.g,
+				b: color.b
+			}
 		};
 		
-		this.emit("dataReceived", dataObj);
+		self.emit("Received", dataObj);
 	});
 
 };
@@ -122,7 +97,7 @@ MilightRF24Controller.prototype.open = function () {
 	self._serialPort.on("open", function () {
 		self._serialPort.on('data', function(data) {
 			if(data.length == 22) {
-				self._emitter.emit("dataReceived", data);
+				self._emitter.emit("dataReceived", data, self);
 			}
 		});
 
@@ -141,21 +116,10 @@ MilightRF24Controller.prototype.setColor = function (id,zone,r,g,b){
 	self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "00", 30);
 }
 
-MilightRF24Controller.prototype.setbrightness =  function (id, zone, percent) {
+MilightRF24Controller.prototype.setBrightness =  function (id, zone, percent) {
 	var self = this;
 	
-	var brightness = Math.max( 0,(Math.ceil(percent/100*25)) - 1);
-	
-	if(brightness <= 16) {
-        brightness = brightness * -1;
-		brightness += 16;
-	}
-	else {
-        brightness = brightness * -1;
-		brightness += 47;
-	}
-	
-	brightness = brightness << 3;
+	var brightness = self._PercentToMilightBrightness(percent);
 
 	self._queueData(id, zone, 0, "00", brightness, "0E", 2);
 	self._queueData(id, zone, 0, "00", brightness, "00", 30);
@@ -200,7 +164,7 @@ MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, br
 	var packet = "B"+disco+id+color+self._numHex(brightness)+self._numHex(button)+self._numHex(self._counter)+strRepeats;
 	
 	self._packets.push(packet);
-	
+	//console.log("Queue: "+packet + "Sending: "+self._sending);
 	if(self._sending === false) {
 		self._sending = true;
 		self._emitter.emit("sendData");
@@ -334,16 +298,56 @@ MilightRF24Controller.prototype._hsvToRgb = function(h, s, v) {
             g = p;
             b = q;
     }
-
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+	
+    return {
+			r: Math.round(r * 255) || 0,
+			g: Math.round(b * 255) || 0,
+			b: Math.round(g * 255) || 0
+	}
 };
 
 MilightRF24Controller.prototype._MilightColorToRGB  = function(milicolor) {
-	var c1 = (Math.floor((milicolor / 255.0 * 359.0) % 360) - 240);
+	var c1 = (Math.floor((milicolor / 255.0 * 359.0) % 360) - 36);
 	var color = c1 <= 0 ? Math.abs(c1) : 360 - c1;
-	rgb = hsvToRgb(color, 80, 100).join();
+	rgb = this._hsvToRgb(color, 100, 100);
 	return rgb;
 };
+
+MilightRF24Controller.prototype._PercentToMilightBrightness = function(percent) {
+	var brightness = Math.max( 0,(Math.round(percent/100*25)));
+
+	if(brightness < 25) {
+    	brightness = brightness * -1;
+		brightness += 16;
+	}
+	else {
+        brightness = brightness * -1;
+		brightness += 50;
+	}
+	
+	return brightness << 3;
+}
+
+MilightRF24Controller.prototype._MilightBrightnessToPercent =  function(brightness) {
+
+	if(brightness < 0xC8 && brightness > 0xA0)
+		brightness = 0xC8;
+
+	brightness = brightness >> 3;
+	
+	if(brightness < 24) {
+        brightness -= 16;
+        brightness = brightness * -1;
+	}
+	else{
+		brightness -= 50;
+		brightness = brightness * -1;
+	}
+	
+	//brightness = brightness << 3;
+	
+	return brightness = Math.max(0, Math.min( 100,(Math.ceil(brightness/25*100))));
+}
 
 var RGBWButtons = function(){};
 RGBWButtons.prototype.AllOn = 0x01;
@@ -359,7 +363,7 @@ RGBWButtons.prototype.Group4Off = 0x0A;
 RGBWButtons.prototype.SpeedUp = 0x0B;
 RGBWButtons.prototype.SpeedDown = 0x0C;
 RGBWButtons.prototype.ColorFader = 0x0F;
-RGBWButtons.prototype.brightnessFader = 0x0E;
+RGBWButtons.prototype.BrightnessFader = 0x0E;
 RGBWButtons.prototype.FaderReleased = 0x00;
 
 module.exports = {
