@@ -20,6 +20,7 @@ var MilightRF24Controller = function (options) {
 	this._lastSend = 0;
 	this._packets = new Array();
 	this._sending = false;
+	this._opened = false;
 	
 	this._serialPort = new SerialPort(options.port, {
 	  baudrate: 115200
@@ -101,9 +102,12 @@ MilightRF24Controller.prototype.open = function () {
 			}
 		});
 
+		// wait for Arduino init
 		setTimeout(function() {
 			self._serialPort.write("x", function(err, results) {
 				self._serialPort.write("r\r\n");
+				self._opened = true;
+				self._sendData();
 			});
 		}, 5000);
 	});
@@ -143,6 +147,14 @@ MilightRF24Controller.prototype.sendDiscomode = function (id, zone, discomode) {
 	self._queueData(id, zone, 0, "00", "00", 0x0D, 30);
 }
 
+MilightRF24Controller.prototype._sendData = function () {
+	var self = this;
+	
+	if(self._sending === false && self._opened) {
+		self._sending = true;
+		self._emitter.emit("sendData");
+	}
+}
 
 MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, brightness, button, repeats) {
 	var self = this;
@@ -165,10 +177,7 @@ MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, br
 	
 	self._packets.push(packet);
 	//console.log("Queue: "+packet + "Sending: "+self._sending);
-	if(self._sending === false) {
-		self._sending = true;
-		self._emitter.emit("sendData");
-	}
+	self._sendData();
 }
 
 MilightRF24Controller.prototype._numHex = function (s) {

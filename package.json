@@ -1,6 +1,6 @@
 {
   "name": "node-milight-rf24",
-  "version": "0.0.3",
+  "version": "0.1.1",
   "description": "This module can communicate with an Arduino with the sketch from https://github.com/henryk/openmili to communicate with milight and OEM equivalents auch as Rocket LED, Limitless LED Applamp, Easybulb, s`luce, iLight, iBulb, and Kreuzer 2.4GHz LED Bulbs",
   "author": {
     "name": "Markus Minini",
@@ -26,11 +26,28 @@
   "dependencies": {
     "serialport": ">=1.7.4"
   },
-  "readme": "# node-milight-rf24\r\n\r\nThis module can communicate with an Arduino with the sketch from https://github.com/henryk/openmili to \r\ncommunicate with milight/limitlessled/etc. 2.4GHz LED Bulbs.\r\n",
-  "readmeFilename": "README.md",
   "gitHead": "1b74f0005ea6a2492960e0b0d54cd81b58a78a50",
   "_id": "node-milight-rf24@0.0.3",
   "scripts": {},
   "_shasum": "59a8a2a29f859ba755863aa37e9e7068bb0d87ac",
-  "_from": "node-milight-rf24@>=0.0.1"
+  "_from": "node-milight-rf24@>=0.0.1",
+  "_npmVersion": "2.11.0",
+  "_nodeVersion": "0.10.24",
+  "_npmUser": {
+    "name": "xento",
+    "email": "markus-mi@web.de"
+  },
+  "dist": {
+    "shasum": "59a8a2a29f859ba755863aa37e9e7068bb0d87ac",
+    "tarball": "http://registry.npmjs.org/node-milight-rf24/-/node-milight-rf24-0.0.3.tgz"
+  },
+  "maintainers": [
+    {
+      "name": "xento",
+      "email": "markus-mi@web.de"
+    }
+  ],
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/node-milight-rf24/-/node-milight-rf24-0.0.3.tgz",
+  "readme": "ERROR: No README data found!"
 }
