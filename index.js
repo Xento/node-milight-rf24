@@ -32,18 +32,25 @@ var MilightRF24Controller = function (options) {
 		if(self._packets.length > 0){
 			var packet = self._packets.shift();
 			//console.log(packet);
-			self._serialPort.write(packet+"\r\n", function(err, results){
-				
-				setTimeout(function(){
-					self._emitter.emit("sendData");
-				}, 200);
-			});
+			self.emit("Sending", packet);
+			self._serialPort.write(packet);
+			self._serialPort.drain();
+			
+			setTimeout(function(){
+				self._emitter.emit("sendData");
+			}, 100);
 		}
-		else
+		else {
+			self.emit("Sending", "Queue Finished");
 			self._sending = false;
+		}
 	});
 
-	this._emitter.on("dataReceived", function (data){
+	this._emitter.on("dataReceived", function (data){		
+		var stringData = String(data);
+		
+		if(stringData == "Resending\r\nResending\r\n")
+			return;
 		
 		data = String(data).split(" ");
 		var id = ""+data[1]+data[2];
@@ -71,6 +78,7 @@ var MilightRF24Controller = function (options) {
 		data.pop();
 		
 		var dataObj = {
+			string: stringData,
 			raw: data,
 			id: id,
 			zone: group,
@@ -104,8 +112,7 @@ MilightRF24Controller.prototype.open = function () {
 
 		// wait for Arduino init
 		setTimeout(function() {
-			self._serialPort.write("x", function(err, results) {
-				self._serialPort.write("r\r\n");
+			self._serialPort.write("xr\r\n", function(err, results) {
 				self._opened = true;
 				self._sendData();
 			});
@@ -116,8 +123,8 @@ MilightRF24Controller.prototype.open = function () {
 MilightRF24Controller.prototype.setColor = function (id,zone,r,g,b){
 	var self = this;
 	
-	self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "0F", 2);
-	self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "00", 30);
+	self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "0F", 30);
+	//self._queueData(id, zone, 0, self._numHex(self._hsvToMilightColor(self._rbgToHsv(r,b,g))), "00", "00", 30);
 }
 
 MilightRF24Controller.prototype.setBrightness =  function (id, zone, percent) {
@@ -125,8 +132,8 @@ MilightRF24Controller.prototype.setBrightness =  function (id, zone, percent) {
 	
 	var brightness = self._PercentToMilightBrightness(percent);
 
-	self._queueData(id, zone, 0, "00", brightness, "0E", 2);
-	self._queueData(id, zone, 0, "00", brightness, "00", 30);
+	self._queueData(id, zone, 0, "00", brightness, "0E", 30);
+	//self._queueData(id, zone, 0, "00", brightness, "00", 30);
 }
 
 MilightRF24Controller.prototype.sendButton =  function (id, zone, button, longPress) {
@@ -135,7 +142,7 @@ MilightRF24Controller.prototype.sendButton =  function (id, zone, button, longPr
 	if(longPress == true)
 		button = button | 0x10;
 	
-	self._queueData(id, zone, 0, "00", "00", button, 30);
+	self._queueData(id, zone, 0, "00", "00", button, 40);
 }
 
 MilightRF24Controller.prototype.sendDiscomode = function (id, zone, discomode) {
@@ -144,7 +151,7 @@ MilightRF24Controller.prototype.sendDiscomode = function (id, zone, discomode) {
 	if(discomode < 0 || discomode > 8)
 		return;
 	
-	self._queueData(id, zone, 0, "00", "00", 0x0D, 30);
+	self._queueData(id, zone, 0, "00", "00", 0x0D, 40);
 }
 
 MilightRF24Controller.prototype._sendData = function () {
@@ -167,13 +174,13 @@ MilightRF24Controller.prototype._queueData = function(id, zone, disco, color, br
 	
 	self._counter++;
 	
-	brightness = self._numHex(brightness | zone);
+	brightness = brightness | zone;
 	
 	var strRepeats = "";
 	for(var i = 0; i < repeats; i++)
 		strRepeats += ".";
 	
-	var packet = "B"+disco+id+color+self._numHex(brightness)+self._numHex(button)+self._numHex(self._counter)+strRepeats;
+	var packet = "B"+disco+id+color+self._numHex(brightness)+self._numHex(button)+self._numHex(self._counter)+"\r\n"+strRepeats+"\r\n";
 	
 	self._packets.push(packet);
 	//console.log("Queue: "+packet + "Sending: "+self._sending);
@@ -325,7 +332,9 @@ MilightRF24Controller.prototype._MilightColorToRGB  = function(milicolor) {
 MilightRF24Controller.prototype._PercentToMilightBrightness = function(percent) {
 	var brightness = Math.max( 0,(Math.round(percent/100*25)));
 
-	if(brightness < 25) {
+	var ifBrightness = (brightness -16) * -1;
+  
+	if(ifBrightness < 24 && ifBrightness >= 0) {
     	brightness = brightness * -1;
 		brightness += 16;
 	}
@@ -334,7 +343,12 @@ MilightRF24Controller.prototype._PercentToMilightBrightness = function(percent) 
 		brightness += 50;
 	}
 	
-	return brightness << 3;
+	brightness = brightness << 3
+	
+	if(brightness > 255)
+		brightness = 255;
+	
+	return brightness;
 }
 
 MilightRF24Controller.prototype._MilightBrightnessToPercent =  function(brightness) {
@@ -344,7 +358,7 @@ MilightRF24Controller.prototype._MilightBrightnessToPercent =  function(brightne
 
 	brightness = brightness >> 3;
 	
-	if(brightness < 24) {
+	if(brightness < 25) {
         brightness -= 16;
         brightness = brightness * -1;
 	}
