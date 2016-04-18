@@ -6,6 +6,7 @@
     "name": "Markus Minini",
     "url": "https://github.com/xento/node-milight-rf24"
   },
+  "license": "GPL-2.0",
   "main": "index",
   "homepage": "https://github.com/xento/node-milight-rf24",
   "repository": {
@@ -24,29 +25,12 @@
     "nrf24"
   ],
   "dependencies": {
-    "serialport": ">=1.7.4"
-  },
-  "gitHead": "1b74f0005ea6a2492960e0b0d54cd81b58a78a50",
-  "_id": "node-milight-rf24@0.1.1",
-  "scripts": {},
-  "_shasum": "e3802ccc8bbf3eb8a22091cd970969eddc0f5c4e",
-  "_from": "node-milight-rf24@>=0.1.1",
-  "_npmVersion": "2.11.0",
-  "_nodeVersion": "0.10.24",
-  "_npmUser": {
-    "name": "xento",
-    "email": "markus-mi@web.de"
-  },
-  "dist": {
-    "shasum": "e3802ccc8bbf3eb8a22091cd970969eddc0f5c4e",
-    "tarball": "http://registry.npmjs.org/node-milight-rf24/-/node-milight-rf24-0.1.1.tgz"
+    "serialport": "^2.1.0"
   },
   "maintainers": [
     {
       "name": "xento",
       "email": "markus-mi@web.de"
     }
-  ],
-  "directories": {},
-  "_resolved": "https://registry.npmjs.org/node-milight-rf24/-/node-milight-rf24-0.1.1.tgz"
+  ]
 }
