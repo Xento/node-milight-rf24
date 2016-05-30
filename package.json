@@ -1,12 +1,11 @@
 {
   "name": "node-milight-rf24",
-  "version": "0.1.5",
+  "version": "0.1.8",
   "description": "This module can communicate with an Arduino with the sketch from https://github.com/henryk/openmili to communicate with milight and OEM equivalents auch as Rocket LED, Limitless LED Applamp, Easybulb, s`luce, iLight, iBulb, and Kreuzer 2.4GHz LED Bulbs",
   "author": {
     "name": "Markus Minini",
     "url": "https://github.com/xento/node-milight-rf24"
   },
-  "license": "GPL-2.0",
   "main": "index",
   "homepage": "https://github.com/xento/node-milight-rf24",
   "repository": {
@@ -32,5 +31,6 @@
       "name": "xento",
       "email": "markus-mi@web.de"
     }
-  ]
+  ],
+  "license": "GPL-2.0"
 }
